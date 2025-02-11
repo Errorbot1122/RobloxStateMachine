@@ -97,7 +97,7 @@ Transition._getPreviousState = nil :: ()-> string?
     local Transition = StateMachine.Transition
 
     local GoToBlue = Transition.new("Blue")
-    GoToBlue.OnHearbeat = false
+    GoToBlue.OnHeartbeat = false
 
     function GoToBlue:OnDataChanged(data)
         return tick() - data.time > 10 -- Will change to blue after 10 seconds 
@@ -211,7 +211,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    @deprecated v1.1.7 -- This function is redundant since it essencially just works as a blocker for OnDataChanged
+    @deprecated v1.1.7 -- This function is redundant since it essentially just works as a blocker for OnDataChanged
 
     Whether it can change to this state or not. It's a good way to lock the current state
 
@@ -225,7 +225,7 @@ function Transition:CanChangeState(data: {[string]: any}): boolean
 end
 
 --[=[
-    Forcelly changes the current state of our state machine to a new one
+    Forcefully changes the current state of our state machine to a new one
 
     @param newState string -- The name of the new state
 

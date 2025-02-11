@@ -30,7 +30,7 @@ StateMachine.__index = StateMachine
     @prop Data {[string]: any}
     @within StateMachine
 
-    Contains the data that is shared accross all states and transitions of this state machine. Should be accessed with :GetData
+    Contains the data that is shared across all states and transitions of this state machine. Should be accessed with :GetData
 
     E.g
     ```lua
@@ -38,7 +38,7 @@ StateMachine.__index = StateMachine
     stateMachine:GetData().health = 50
     ```
 
-    The data is shared accross all states and transitions. It can be access in 2 different ways
+    The data is shared across all states and transitions. It can be access in 2 different ways
 
     ```lua
     --transition.lua
@@ -62,7 +62,7 @@ StateMachine.Data = {} :: {[string]: any}
     @prop StateChanged⚡ Signal<(string, string)>?
     @within StateMachine
 
-    Called whenever the state of this state machinse changes. The first argument
+    Called whenever the state of this state machine changes. The first argument
     is the new state and the second one is the previous state. If there was no previous state
     then it will be an empty string
 
@@ -460,7 +460,7 @@ function StateMachine:Destroy(): ()
 end
 
 --[=[
-    Forcelly changes the current state of our state machine to a new one
+    Forcefully changes the current state of our state machine to a new one
 
     @param newState string -- The name of the new state
 

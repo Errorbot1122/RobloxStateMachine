@@ -146,7 +146,7 @@ function State:Extend(stateName: string): State
 end
 
 --[=[
-    Forcelly changes the current state of our state machine to a new one
+    Forcefully changes the current state of our state machine to a new one
 
     @param newState string -- The name of the new state
 
