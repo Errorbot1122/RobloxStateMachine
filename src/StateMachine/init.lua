@@ -271,7 +271,9 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
             return
         end
 
-        task.spawn(state.OnHeartbeat, state, self:GetData(), deltaTime)
+        self._stateTrove:Add(
+            task.spawn(state.OnHeartbeat, state, self:GetData(), deltaTime)
+        )
     end))
 
     self._trove:Add(self.StateChanged)
