@@ -253,7 +253,7 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
     end
 
     local previousState: State = nil
-    self._trove:Add(RunService.Heartbeat:Connect(function(deltaTime: number)
+    self._trove:Connect(RunService.Heartbeat, function(deltaTime: number)
         if self._Destroyed then
             return
         end
@@ -272,7 +272,7 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
         end
 
         self:_CallMethod(state, false, "OnHeartbeat", self:GetData(), deltaTime)
-    end))
+    end)
 
     self._trove:Add(self.StateChanged)
     self._trove:Add(self.DataChanged)
