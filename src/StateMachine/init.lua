@@ -265,7 +265,7 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
     end
 
     local previousState: State = nil
-    self._trove:Add(RunService.Heartbeat:Connect(function(deltaTime: number)
+    self._trove:Connect(RunService.Heartbeat, function(deltaTime: number)
         if self._Destroyed then -- (Don't run if destroyed)
             return
         end
@@ -287,8 +287,8 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
         end
 
         -- Run the heartbeat method for the state
-        task.spawn(state.OnHeartbeat, state, self:GetData(), deltaTime)
-    end))
+        self:_CallMethod(state, false, "OnHeartbeat", self:GetData(), deltaTime)
+    end)
 
     -- Add the Events to be cleaned on destruction
     self._trove:Add(self.StateChanged)
@@ -358,7 +358,7 @@ function StateMachine:ChangeData(index: string, newValue: any): ()
     local state: State = self:_GetCurrentStateObject()
     
     -- Call DataChanged Events
-    task.spawn(state.OnDataChanged, state, self.Data, index, newValue, oldValue)
+    self:_CallMethod(state, false, "OnDataChanged", self.Data, index, newValue, oldValue)
     self.DataChanged:Fire(self.Data, index, newValue, oldValue)
 end
 
@@ -567,7 +567,7 @@ function StateMachine:_ChangeState(newState: string): ()
     task.defer(function()
         self:_CallTransitions(state, "OnEnter", self:GetData())
     end)
-    self._stateTrove:Add(task.defer(state.OnEnter, state, self:GetData()))
+    self:_CallMethod(state, true, "OnEnter", self:GetData())
     
     -- Update the current state
     self._CurrentState = newState
@@ -627,6 +627,25 @@ function StateMachine:_CallTransitions(state: State, methodName: string, ...: an
     end
 end
 
+--[=[
+    Calls the corresponding method for the given state. (to be cleaned up later)
+
+    @param state State
+    @param methodName string
+    @param shouldDefer boolean?
+    @param ... any
+
+    @private
+
+    @return ()
+]=]
+function StateMachine:_CallMethod(state: State, shouldDefer: boolean, methodName: string, ...: any): ()    
+    local action = shouldDefer and "defer" or "spawn"
+    
+    self._stateTrove:Add(
+        task[action](state[methodName], state, ...)
+    )
+end
 export type RobloxStateMachine = typeof(StateMachine)
 export type State = State.State
 export type Transition = Transition.Transition
