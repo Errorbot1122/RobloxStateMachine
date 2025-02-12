@@ -301,7 +301,13 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever you first enter this state
+    Called whenever you first enter this state. 
+
+    :::warning
+    **OnHeartbeat** dose not wait for OnEnter to finish. You must implement
+    that yourself.
+    :::
+
 
     ```lua
     function State:OnEnter(data)

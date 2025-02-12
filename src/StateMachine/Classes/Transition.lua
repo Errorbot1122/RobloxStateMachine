@@ -171,6 +171,11 @@ end
 
     Called whenever you first enter this transition object
 
+    :::warning
+    **OnDataChanged** dose not wait for OnEnter to finish. You must implement
+    that yourself.
+    :::
+
     ```lua
     function State:OnEnter(data)
         data.part.Color = Color3.fromRGB(0, 166, 255)
