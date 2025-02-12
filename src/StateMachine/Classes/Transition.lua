@@ -12,7 +12,7 @@ Transition.Type = "Transition"
     @prop Name string
     @within Transition
 
-    The name of the state. This is used to identify the state. Usually set while creating the state
+    The name of the transition. This is used to identify this transition. _(Not required)_
 
     ```lua
     local Transition = StateMachine.Transition
@@ -26,7 +26,7 @@ Transition.Name = "" :: string
     @prop TargetState string
     @within Transition
 
-    The name of the state. This is used to identify the state. Usually set while creating the state
+    The name of the state to change to when transitioning. (Usually set while creating the transition)
 
     ```lua
     local Transition = StateMachine.Transition
@@ -40,10 +40,10 @@ Transition.TargetState = "" :: string
     @prop Data {[string]: any}
     @within Transition
 
-    Contains the state machine data, it can be accessed from within the class
+    Contains the custom state machine data. It can be accessed from within the class
 
     ```lua
-    local Default: State = State.new("Blue")
+    local Default: State = Transition.new("Blue")
 
     function Default:OnInit(data)
         print(self.Data)
@@ -56,7 +56,7 @@ Transition.Data = {} :: {[string]: any}
     @within Transition
     @private
 
-    This is used to change the state of the state machine. This is set by the state machine itself
+    Gets the current state of our state machine. (This is set by the state machine itself)
 ]=]
 Transition._changeState = nil :: (newState: string)->()?
 --[=[
@@ -64,7 +64,7 @@ Transition._changeState = nil :: (newState: string)->()?
     @within Transition
     @private
 
-    This is used to change the data of the state machine. This is set by the state machine itself
+    This is used to change the custom data of the state machine. (This is set by the state machine itself)
 ]=]
 Transition._changeData = nil :: (index: string, newValue: any)-> ()?
 --[=[
@@ -72,7 +72,7 @@ Transition._changeData = nil :: (index: string, newValue: any)-> ()?
     @within Transition
     @private
 
-    Gets the current state of our state machine
+    Gets the current state of our state machine. (This is set by the state machine itself)
 ]=]
 Transition._getState = nil :: (index: string, newValue: any)-> string
 --[=[
@@ -80,15 +80,16 @@ Transition._getState = nil :: (index: string, newValue: any)-> string
     @within Transition
     @private
 
-    Gets the previous state of our state machine
+    Gets the previous state of our state machine. (This is set by the state machine itself)
 ]=]
 Transition._getPreviousState = nil :: ()-> string?
 
 --[=[
-    Creates a new transition. Transitions are used to tell our state
-    when and how should it move from the current state to a different one.
-    They are meant to be reusable and allow us to easily add and reuse transitions
-    between states and objects
+    Creates a new transition.
+    
+    Transitions are used to tell our state when and how should it move from the 
+    current state to a different one. They are meant to be reusable and allow us
+    to easily add and reuse transitions between states and objects.
 
     ```lua
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -118,7 +119,7 @@ function Transition.new(targetState: string?): Transition
 end
 
 --[=[
-    Extends a state inheriting the behavior from the parent state
+    Extends a state, inheriting the behavior from the parent state
 
     ```lua
     local transition = Transition.new("Blue")
@@ -147,7 +148,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever the state machine is created
+    Called whenever a state machine is newly created with this transition
 
     ```lua
     function Transition:OnInit()
@@ -155,7 +156,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -168,7 +169,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever you enter this transition object
+    Called whenever you first enter this transition object
 
     ```lua
     function State:OnEnter(data)
@@ -176,7 +177,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -189,7 +190,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever you leave this transition object
+    Called whenever your about leave this transition. _(and before **OnDestroy**)_
 
     ```lua
     function State:OnLeave(data)
@@ -197,7 +198,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -225,7 +226,7 @@ function Transition:CanChangeState(data: {[string]: any}): boolean
 end
 
 --[=[
-    Forcefully changes the current state of our state machine to a new one
+    Changes the current state of our state machine to a new one.
 
     @param newState string -- The name of the new state
 
@@ -245,6 +246,8 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
     
+    Determines wether the transition should should change yet.
+
     Should return true if it should change to the target state
     and false if it shouldn't
 
@@ -286,7 +289,9 @@ function Transition:GetPreviousState(): string
 end
 
 --[=[
-    Changing data request. You can also just Get the data and change the data at run time.
+    Changing the custom data, while firing **DataChanged** Event
+    
+    (You can also just use the date argument and change the data at runtime, _**However** this dose not fire **DataChanged** event!_)
 
     ```lua
     local example: State = State.new("Blue")
@@ -317,7 +322,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever the state machine is destroyed
+    Called whenever the state machine is being destroyed
 
     ```lua
     function Transition:OnDestroy()

@@ -301,7 +301,7 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
 end
 
 --[=[
-    Returns the current state of the State Machine
+    Returns the current state of the State Machine (in string form)
 
     ```lua
     local exampleStateMachine = RobloxStateMachine.new("Default", {}, {})
@@ -315,7 +315,7 @@ function StateMachine:GetCurrentState(): string
 end
 
 --[=[
-    Returns the previous state of the State Machine
+    Returns the previous state of the State Machine (in string form)
 
     ```lua
     local exampleStateMachine = RobloxStateMachine.new("Default", {...BlueStateHere}, {})
@@ -330,7 +330,9 @@ function StateMachine:GetPreviousState(): string
 end
 
 --[=[
-    Changing data request. You can also just Get the data and change the data at run time.
+    Changing the custom data, while firing **DataChanged** Event
+    
+    (You can also just use **GetData** and change the data at runtime, _**However** this dose not fire **DataChanged** event!_)
 
     ```lua
     local stateMachine = RobloxStateMachine.new("state", states, {health = 0})
@@ -361,7 +363,7 @@ function StateMachine:ChangeData(index: string, newValue: any): ()
 end
 
 --[=[
-    Gets the custom data of this state machine object.
+    Gets the custom data of this state machine
 
     ```lua
     local stateMachine = RobloxStateMachine.new("Start", {state1, state2}, {health = 20})
@@ -382,7 +384,9 @@ function StateMachine:GetData(): {[string]: any}
 end
 
 --[=[
-    Used to load thru a directory. It's specially useful to load states and or transitions!
+    Used to load thru an entire directory (and its sub-directories).
+    
+    _**(Especially useful to load states and or transitions!)**_
 
     ```lua
     local exampleStateMachine: RobloxStateMachine.RobloxStateMachine = RobloxStateMachine.new(
@@ -395,7 +399,7 @@ end
     )
     ```
 
-    You can also use it to load specific files by feeding the names you wish to load
+    (You can also use it to load specific files by feeding the names you wish to load)
 
 
     @param directory Instance
@@ -458,8 +462,9 @@ function StateMachine:LoadDirectory(directory: Instance, names: {string}?): {any
 end
 
 --[=[
-    If you wish to stop using the state machine at any point you should then clear
-    it from the memory. Call Destroy whenever you are done with the state machine.
+    Clears all the memory used by the state machine
+
+    (Use if you wish to stop using the state machine at any point)
 
     ```lua
     local stateMachine = RobloxStateMachine.new(...)
@@ -490,7 +495,9 @@ function StateMachine:Destroy(): ()
 end
 
 --[=[
-    Forcefully changes the current state of our state machine to a new one
+    Changes the current state of our state machine to a new one.
+
+    _(**currentState:CanChangeState** must be satisfied before it can change!)_
 
     @param newState string -- The name of the new state
 
@@ -520,7 +527,7 @@ function StateMachine:_StateExists(stateName: string): boolean
 end
 
 --[=[
-    Called to change the current state of the state machine
+    Called to _truly_ change the current state of the state machine
 
     @private
 
@@ -585,7 +592,8 @@ end
 
 --[=[
     Checks if we meet any condition to change the current state.
-    If any of the transitions returns true then we should change the current state
+    
+    The first transition to return true then will change the current state
 
     @private
 
