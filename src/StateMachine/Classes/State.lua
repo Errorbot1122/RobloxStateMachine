@@ -157,6 +157,7 @@ function State:ChangeState(newState: string): ()
         return
     end
 
+    -- Call the "parent" StateMachine Method
     self._changeState(newState)
 end
 
@@ -170,6 +171,7 @@ function State:GetState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getState()
 end
 
@@ -183,6 +185,7 @@ function State:GetPreviousState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getPreviousState()
 end
 
@@ -209,6 +212,7 @@ function State:ChangeData(index: string, newValue: any): ()
         return
     end
 
+        -- Call the "parent" StateMachine Method
     self._changeData(index, newValue)
 end
 

@@ -236,6 +236,7 @@ function Transition:ChangeState(newState: string): ()
         return
     end
 
+    -- Call the "parent" StateMachine Method
     self._changeState(newState)
 end
 
@@ -266,6 +267,7 @@ function Transition:GetState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getState()
 end
 
@@ -279,6 +281,7 @@ function Transition:GetPreviousState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getPreviousState()
 end
 
@@ -305,6 +308,7 @@ function Transition:ChangeData(index: string, newValue: any): ()
         return
     end
 
+    -- Call the "parent" StateMachine Method
     self._changeData(index, newValue)
 end
 

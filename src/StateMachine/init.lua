@@ -172,8 +172,8 @@ StateMachine._Destroyed = false :: boolean
     )
     ```
 
-    @param initialState string -- The name of the state at which it should start
-    @param states {State.State} -- An array of the states this state machine should have
+    @param initialState string -- The name of the State at which it should start
+    @param states {State.State} -- An array of the states this State machine should have
     @param initialData {[string]: any}? -- The starting data to be used by the states
 
     @return RobloxStateMachine
@@ -191,13 +191,17 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
     self.StateChanged = Signal.new() :: Signal.Signal<(string, string)>
     self.DataChanged = Signal.new() :: Signal.Signal<({[string]: any}, any, any, any)>?
 
-    for _, state: State.State in states do -- Load the states
+    -- Load all the states
+    for _, state: State.State in states do
         if self._States[state.Name] then
             error(DUPLICATE_ERROR.." \""..state.Name.."\"", 2)
         end
 
+        -- Create a copy of the State "parented" to this StateMachine
         local stateClone: State.State = Copy(state)
         stateClone.Data = self.Data
+
+        -- Fill up the necessary "parent" accessing methods with our methods 
         stateClone._changeState = function(newState: string)
             self:ChangeState(newState)
         end
@@ -211,14 +215,22 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
             return self:GetPreviousState()
         end
 
+        -- Load all the Transitions
         stateClone._transitions = {}
-
         for _, transition: Transition in stateClone.Transitions do
-            if #transition.Name == 0 then
+            if #transition.Name == 0 then -- (Transitions don't need names, but must have one for HashTable)
                 transition.Name = HttpService:GenerateGUID(false)
             end
 
+            -- Create a copy of the Transition "parented" to this StateMachine
             local transitionClone: Transition = Copy(transition)
+
+            if transitionClone.Type ~= Transition.Type then -- (must be a Transition)
+                error(WRONG_TRANSITION, 2)
+            end
+            
+            -- Fill up the necessary "parent" accessing methods with our methods 
+            transitionClone.Data = stateClone.Data
             transitionClone._changeData = function(index: string, newValue: any)
                 self:ChangeData(index, newValue)
             end
@@ -228,55 +240,61 @@ function StateMachine.new(initialState: string, states: {State}, initialData: {[
             transitionClone._getPreviousState = function()
                 return self:GetPreviousState()
             end
-
-            if transitionClone.Type ~= Transition.Type then
-                error(WRONG_TRANSITION, 2)
-            end
- 
-            transitionClone.Data = stateClone.Data
             transitionClone._changeState = function(newState: string)
                 self:ChangeState(newState)
             end
 
+            -- Add the Transition to the list of initialized Transitions
             stateClone._transitions[transitionClone.Name] = transitionClone
+
+            -- Run its own initialization method and add it to be cleaned up on destruction
             task.spawn(transitionClone.OnInit, transitionClone, self.Data)
             self._trove:Add(transitionClone, "OnDestroy")
         end
 
+        -- Add the State to the list of initialized States
         self._States[state.Name] = stateClone
+
+        -- Run its own initialization method and add it to be cleaned up on destruction
         task.spawn(stateClone.OnInit, stateClone, self.Data)
         self._trove:Add(stateClone, "OnDestroy")
     end
 
-    if not self._States[initialState] then
+    if not self._States[initialState] then -- (Make sure the staring State is valid)
         error(STATE_NOT_FOUND:format("create a state machine", initialState), 2)
     end
 
     local previousState: State = nil
     self._trove:Add(RunService.Heartbeat:Connect(function(deltaTime: number)
-        if self._Destroyed then
+        if self._Destroyed then -- (Don't run if destroyed)
             return
         end
 
         self:_CheckTransitions()
         
         local state = self:_GetCurrentStateObject()
+
+        -- Skip the first frame of a State change
         local firstFrame: boolean = state ~= previousState
         previousState = state
         if firstFrame then
             return
         end
 
+        -- Don't run if nothing was changed
         if not state or getmetatable(state).OnHeartbeat == state.OnHeartbeat then
             return
         end
 
+        -- Run the heartbeat method for the state
         task.spawn(state.OnHeartbeat, state, self:GetData(), deltaTime)
     end))
 
+    -- Add the Events to be cleaned on destruction
     self._trove:Add(self.StateChanged)
     self._trove:Add(self.DataChanged)
 
+    -- Start on the starting state
     self:_ChangeState(initialState)
 
     return self
@@ -331,10 +349,13 @@ function StateMachine:ChangeData(index: string, newValue: any): ()
         return
     end
     
+    -- Change the data
     local oldValue: any = self.Data[index]
     self.Data[index] = newValue
 
-    local state: State = self._States[self:GetCurrentState()]
+    local state: State = self:_GetCurrentStateObject()
+    
+    -- Call DataChanged Events
     task.spawn(state.OnDataChanged, state, self.Data, index, newValue, oldValue)
     self.DataChanged:Fire(self.Data, index, newValue, oldValue)
 end
@@ -351,6 +372,7 @@ end
     @return {[string]: any}
 ]=]
 function StateMachine:GetData(): {[string]: any}
+    -- Clear the data if it is not a table
     if typeof(self.Data) ~= "table" then
         warn(DATA_WARNING)
         self.Data = {}
@@ -382,6 +404,7 @@ end
     @return {any}
 ]=]
 function StateMachine:LoadDirectory(directory: Instance, names: {string}?): {any}
+    -- Load from scratch if not already loaded in the past
     if not cacheDirectories[directory] then
         cacheDirectories[directory] = {}
 
@@ -390,10 +413,12 @@ function StateMachine:LoadDirectory(directory: Instance, names: {string}?): {any
                 continue
             end
             
+            -- Load the ModuleScript
             local success: boolean, result: any = pcall(function()
                 return require(child)
             end)
 
+            -- Make sure it's actually a table
             if 
                 not success or
                 typeof(result) ~= "table"
@@ -401,24 +426,28 @@ function StateMachine:LoadDirectory(directory: Instance, names: {string}?): {any
                 continue
             end
 
+            -- Make sure its a valid State or Transition
             if result.Type ~= State.Type and result.Type ~= Transition.Type then
                 continue
             end
 
+            -- Use the name of the Script if no name found
             if not result.Name or result.Name == "" then
                 result.Name = child.Name
             end
             
+            -- Save the result to be loaded quickly in the future
             table.insert(cacheDirectories[directory], result)
         end
     end
 
+    -- If there is nothing left to do, then return the saved Modules
     if not names then
         return cacheDirectories[directory]
     end
 
+    -- Only return the modules with the same name as in `names`
     local filteredFiles = {}
-
     for _, file in cacheDirectories[directory] do
         if table.find(names, file.Name) then
             table.insert(filteredFiles, file)
@@ -449,12 +478,13 @@ function StateMachine:Destroy(): ()
     
     self._Destroyed = true
     
+    -- Run the Leave method on the State before destroying
     local state: State? = self:_GetCurrentStateObject()
-
     if state then
         task.spawn(state.OnLeave, state, self:GetData())
     end
 
+    -- Clean up everything to save memory
     self._trove:Destroy()
     self._stateTrove:Destroy()
 end
@@ -467,8 +497,8 @@ end
     @return ()
 ]=]
 function StateMachine:ChangeState(newState: string): ()
+    --Make sure we are allowed to change states
     local currentState: State? = self:_GetCurrentStateObject()
-
     if currentState and not currentState:CanChangeState(newState) then
         return
     end
@@ -503,12 +533,15 @@ function StateMachine:_ChangeState(newState: string): ()
         return
     end
     
+    -- Make sure the State even exists to begin with
     assert(self:_StateExists(newState), STATE_NOT_FOUND:format(`change to {newState}`, newState))
 
+    -- Only swap if it's not the same
     if self._CurrentState == newState then
         return
     end
 
+    -- Get the updated State classes
     local previousState: State? = self:_GetCurrentStateObject()
     local state: State? = self._States[newState]
 
@@ -516,19 +549,23 @@ function StateMachine:_ChangeState(newState: string): ()
         return
     end
 
-    self._stateTrove:Clean()
+    -- Clean up the previous state
     if previousState then
         task.spawn(previousState.OnLeave, previousState, self:GetData())
         self:_CallTransitions(previousState, "OnLeave", self:GetData())
     end
+    self._stateTrove:Clean()
 
+    -- Switch to the new state
     task.defer(function()
         self:_CallTransitions(state, "OnEnter", self:GetData())
     end)
     self._stateTrove:Add(task.defer(state.OnEnter, state, self:GetData()))
     
+    -- Update the current state
     self._CurrentState = newState
 
+    -- Fire StateChanged Event
     if previousState then
         self._PreviousState = previousState.Name
         self.StateChanged:Fire(newState, previousState.Name or "")
@@ -555,6 +592,7 @@ end
     @return ()
 ]=]
 function StateMachine:_CheckTransitions(): ()
+    -- Check every Transition for a possible State change (prioritizing the first found)
     for _, transition: Transition in self:_GetCurrentStateObject()._transitions do
         if transition:CanChangeState(self:GetData()) and transition:OnDataChanged(self:GetData()) then
             self:ChangeState(transition.TargetState)
@@ -575,6 +613,7 @@ end
     @return ()
 ]=]
 function StateMachine:_CallTransitions(state: State, methodName: string, ...: any): ()
+    -- Call the method for each Transition
     for _, transition: Transition in state._transitions do
         task.spawn(transition[methodName], transition, ...)
     end
