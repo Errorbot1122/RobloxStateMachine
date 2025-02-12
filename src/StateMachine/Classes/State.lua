@@ -5,7 +5,7 @@ local mergeTables = require(script.Parent.Parent.Functions.mergeTables)
     @class State
 
     Describes one of the many states an object can have. It also declares
-    how it should behave when it enters, is and leaves the given state
+    how it should behave when it enters, runs and leaves the given state
 ]=]
 local State = {}
 State.__index = State
@@ -14,7 +14,7 @@ State.Type = "State"
     @prop Name string
     @within State
 
-    The name of the state. This is used to identify the state. Usually set while creating the state
+    The name of the state. This is used to identify the state. (Usually set while creating the state)
 
     ```lua
     local Blue: State = State.new("Blue")
@@ -25,7 +25,7 @@ State.Name = "" :: string
     @prop Transitions string
     @within State
 
-    A reference for the transitions of this state. This is usually set while creating the state
+    A reference for the transitions of this state. This is (usually set while creating the state)
 
     ```lua
     local GoToBlue = require(script.Parent.Parent.Transitions.GoToBlue)
@@ -41,7 +41,7 @@ State.Transitions = {} :: {Transition.Transition}
     @prop Data {[string]: any}
     @within State
 
-    Contains the state machine data, it can be accessed from within the class
+    Contains the custom state machine data. It can be accessed from within the class
 ]=]
 State.Data = {} :: {[string]: any}
 --[=[
@@ -57,7 +57,7 @@ State._transitions = {} :: {[string]: Transition.Transition}
     @within State
     @private
 
-    This is used to change the state of the state machine. This is set by the state machine itself
+    This is used to change the state of the state machine. (This is set by the state machine itself)
 ]=]
 State._changeState = nil :: (newState: string)->()?
 --[=[
@@ -65,7 +65,7 @@ State._changeState = nil :: (newState: string)->()?
     @within State
     @private
 
-    This is used to change the data of the state machine. This is set by the state machine itself
+    This is used to change the custom data of the state machine. (This is set by the state machine itself)
 ]=]
 State._changeData = nil :: (index: string, newValue: any)-> ()?
 --[=[
@@ -73,7 +73,7 @@ State._changeData = nil :: (index: string, newValue: any)-> ()?
     @within State
     @private
 
-    Gets the current state of our state machine
+    Gets the current state of our state machine. (This is set by the state machine itself)
 ]=]
 State._getState = nil :: (index: string, newValue: any)-> string
 --[=[
@@ -81,13 +81,14 @@ State._getState = nil :: (index: string, newValue: any)-> string
     @within State
     @private
 
-    Gets the previous state of our state machine
+    Gets the previous state of our state machine. (This is set by the state machine itself)
 ]=]
 State._getPreviousState = nil :: ()-> string?
 --[=[
     Used to create a new State. The state should manage how the object should behave during
-    that given state. I personally recommend having your states in their own files for organizational
-    purposes
+    that given state.
+    
+    (I personally recommend having your states in their own files for organizational purposes)
 
     ```lua
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -121,7 +122,7 @@ function State.new(stateName: string?): State
 end
 
 --[=[
-    Extends a state inheriting the behavior from the parent state
+    Extends a state, inheriting the behavior from the parent state
 
     ```lua
     local state = State.new("Blue")
@@ -146,7 +147,9 @@ function State:Extend(stateName: string): State
 end
 
 --[=[
-    Forcelly changes the current state of our state machine to a new one
+    Changes the current state of our state machine to a new one.
+
+    _(**currentState:CanChangeState** must be satisfied before it can change!)_
 
     @param newState string -- The name of the new state
 
@@ -157,6 +160,7 @@ function State:ChangeState(newState: string): ()
         return
     end
 
+    -- Call the "parent" StateMachine Method
     self._changeState(newState)
 end
 
@@ -170,6 +174,7 @@ function State:GetState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getState()
 end
 
@@ -183,11 +188,14 @@ function State:GetPreviousState(): string
         return ""
     end
 
+    -- Call the "parent" StateMachine Method
     return self._getPreviousState()
 end
 
 --[=[
-    Changing data request. You can also just Get the data and change the data at run time.
+    Changing the custom data, while firing **DataChanged** Event
+    
+    (You can also just use the date argument and change the data at runtime, _**However** this dose not fire **DataChanged** event!_)
 
     ```lua
     local example: State = State.new("Blue")
@@ -209,6 +217,7 @@ function State:ChangeData(index: string, newValue: any): ()
         return
     end
 
+        -- Call the "parent" StateMachine Method
     self._changeData(index, newValue)
 end
 
@@ -217,7 +226,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever a state machine is created with this state.
+    Called whenever a state machine is newly created with this state
 
     ```lua
     function State:OnInit(data)
@@ -226,7 +235,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -238,6 +247,10 @@ end
     :::info
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
+
+    _(Forcefully)_ Determines if the state machine is allowed to switch states or not.
+
+    _(It's a good way to lock the current state)_
 
     ```lua
     function State:CanChangeState(targetState: string)
@@ -262,7 +275,7 @@ end
     **OnDataChanged** only gets called when the data is changed by a **ChangeData** call
     :::
 
-    Called whenever the data of the state machine changes.
+    Called whenever the data of the state machine changes
 
     ```lua
     function State:OnDataChanged(data, index, newValue, oldValue)
@@ -272,7 +285,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
     @param _index any -- The index of the data that changed
     @param _value any -- The new value of the data
     @param _oldValue any -- The old value of the data
@@ -288,7 +301,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever you enter this state
+    Called whenever you first enter this state
 
     ```lua
     function State:OnEnter(data)
@@ -296,7 +309,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -309,7 +322,9 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called every frame after the physics simulation while in this state
+    Called every frame (after the physics simulation) while in this state.
+
+    (See [`RunService.Heartbeat`](https://create.roblox.com/docs/reference/engine/classes/RunService#Heartbeat) for more information)
 
     ```lua
     function Default:OnHeartbeat(data, deltaTime: number)
@@ -317,7 +332,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
     @param _deltaTime number
 
     @return ()
@@ -331,7 +346,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever you leave this state
+    Called whenever your about leave this state. _(and before **OnDestroy**)_
 
     ```lua
     function State:OnLeave(data)
@@ -339,7 +354,7 @@ end
     end
     ```
 
-    @param _data {[string]: any} -- This is the data from the StateMachine itself!
+    @param _data {[string]: any} -- This is the custom data from the parent StateMachine
 
     @return ()
 ]=]
@@ -352,7 +367,7 @@ end
     This is a **Virtual Method**. Virtual Methods are meant to be overwritten
     :::
 
-    Called whenever the state machine is destroyed
+    Called whenever the state machine is being destroyed
 
     ```lua
     function State:OnDestroy()
